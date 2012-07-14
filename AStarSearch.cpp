@@ -23,13 +23,24 @@ bool AStarSearch::addPossibleNeighbors(MineMap* m, Node &n, Node &dest, list<Nod
 	list<Node>::const_iterator in;
 	for (ip = neighbours->begin(); ip != neighbours->end(); ip++)
 	{
-		bool isExist = false;
+		bool inDiscovered = false;
+		bool inFrontier = false;
 		//Verify that point already discovered
 		for (in = discovered.begin(); in != discovered.end(); in++)
 			if ((*ip).x == (*in).x && (*ip).y == (*in).y)
-				isExist = true;
+			{
+				inDiscovered = true;
+				break;
+			}
 
-		if (!isExist) 
+		for (in = frontier.begin(); in != frontier.end(); in++)
+			if ((*ip).x == (*in).x && (*ip).y == (*in).y)
+			{
+				inFrontier = true;
+				break;
+			}
+
+		if (!inFrontier && !inDiscovered) 
 		{
 			Node newNode((*ip).x, (*ip).y);
 			newNode.cost = n.cost + STEP_COST;
@@ -116,16 +127,18 @@ void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &r
 	bool success = false;
 	int prevSize = -1;
 
-	while (frontier->size() && frontierChanged)
+	while (frontier->size() && (frontierChanged))
 	{
 		Node n = getOptimalNode(*frontier);
 		if (!isDestination(n, d))
 		{
 			prevSize = frontier->size();
 			//into frontier add possible neighbours
-			frontierChanged = addPossibleNeighbors(m, n, d, *frontier, *discovered);
+			bool isAdded = addPossibleNeighbors(m, n, d, *frontier, *discovered);
 			this->removeNode(n, *frontier);
 			discovered->push_back(n);
+			bool isSizeChanged = prevSize != frontier->size();
+			frontierChanged = isAdded || isSizeChanged;
 		}
 		else
 		{
