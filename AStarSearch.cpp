@@ -5,7 +5,7 @@
 */
 int AStarSearch::getManhattenDistance(Node a, Node b)
 {
-	return abs(a.x - b.x) + abs(b.x - b.y);
+	return abs(a.x - b.x) + abs(a.y - b.y);
 }
 
 /*
@@ -14,23 +14,29 @@ int AStarSearch::getManhattenDistance(Node a, Node b)
 */
 void AStarSearch::addPossibleNeighbors(MineMap* m, Node &n, Node &dest, list<Node> &frontier, list<Node> &discovered)
 {
-	list<Point>* neighbours = new list<Point>(); //Get points from MineMap
+	list<Point>* neighbours = new list<Point>();
+	//Get points from MineMap
+	m->GetListOrthogonalPoints(*neighbours, Point(n.x, n.y), NULL, "*#", false);
 
 	list<Point>::const_iterator ip;
 	list<Node>::const_iterator in;
 	for (ip = neighbours->begin(); ip != neighbours->end(); ip++)
 	{
-		//if point is discovered, just continue
+		bool isExist = false;
+		//Verify that point already discovered
 		for (in = discovered.begin(); in != discovered.end(); in++)
 			if ((*ip).x == (*in).x && (*ip).y == (*in).y)
-				continue;
+				isExist = true;
 
-		Node newNode((*ip).x, (*ip).y);
-		newNode.cost = n.cost + STEP_COST;
-		newNode.heuristic = this->getManhattenDistance(newNode, dest);
-		newNode.father_x = n.x;
-		newNode.father_y = n.y;
-		frontier.push_back(newNode);
+		if (!isExist) 
+		{
+			Node newNode((*ip).x, (*ip).y);
+			newNode.cost = n.cost + STEP_COST;
+			newNode.heuristic = this->getManhattenDistance(newNode, dest);
+			newNode.father_x = n.x;
+			newNode.father_y = n.y;
+			frontier.push_back(newNode);
+		}
 	}
 }
 
@@ -47,8 +53,8 @@ Node AStarSearch::getOptimalNode(list<Node> &nodes)
 	{
 		if ((*i).cost + (*i).heuristic < best)
 		{
-			candidate.x = (*i).x;
-			candidate.y = (*i).y;
+			candidate = (*i);
+			best = candidate.cost + candidate.heuristic;
 		}
 	}
 
@@ -65,6 +71,27 @@ bool isStart(Node &p, Node &start)
 	return p.x == start.x && p.y == start.y;
 }
 
+void AStarSearch::removeNode(Node &n, list<Node> &nodes)
+{
+	list<Node>::iterator i;
+	for (i = nodes.begin(); i != nodes.end(); i++)
+		if ((*i).x == n.x && (*i).y == n.y)
+		{
+			nodes.erase(i);
+			return;
+		}
+}
+
+Node AStarSearch::getNode(int x, int y, list<Node> &nodes)
+{
+	list<Node>::iterator i;
+	for (i = nodes.begin(); i != nodes.end(); i++)
+		if ((*i).x == x && (*i).y == y)
+			return (*i);
+
+	return Node(-1, -1);
+}
+
 void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &route)
 {
 	list<Node>* frontier = new list<Node>();
@@ -78,7 +105,8 @@ void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &r
 	s.heuristic = this->getManhattenDistance(s, d);
 	d.heuristic = 0;
 	//Add neighbors for start node
-	this->addPossibleNeighbors(m, s, d, *frontier, *discovered);
+ 	this->addPossibleNeighbors(m, s, d, *frontier, *discovered);
+	discovered->push_back(s);
 
 	while (frontier->size())
 	{
@@ -86,9 +114,10 @@ void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &r
 		if (!isDestination(n, d))
 		{
 			//into frontier add possible neighbours
-			addPossibleNeighbors(m, s, d, *frontier, *discovered);
+			addPossibleNeighbors(m, n, d, *frontier, *discovered);
+			this->removeNode(n, *frontier);
 			discovered->push_back(n);
-			frontier->remove(n);
+			//this->removeNode(n, *frontier);
 		}
 		else
 		{
@@ -119,8 +148,7 @@ void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &r
 	while(!isStart(tmp, s))
 	{
 		route.push_front(Point(tmp.x, tmp.y));
-		tmp.x = tmp.father_x;
-		tmp.y = tmp.father_y;
+		tmp = this->getNode(tmp.father_x, tmp.father_y, *discovered);
 	}
 
 	delete frontier;

@@ -36,6 +36,16 @@ public:
 		this->cost = 0;
 		this->heuristic = 0;
 	}
+
+	Node(const Node& n)
+	{
+		this->x = n.x;
+		this->y = n.y;
+		this->cost = n.cost;
+		this->heuristic = n.heuristic;
+		this->father_x = n.father_x;
+		this->father_y = n.father_y;
+	}
 };
 
 class AStarSearch
@@ -45,5 +55,6 @@ public:
 	void getRoute(MineMap* m, Point &start, Point &dest, list<Point> &route);
 	void addPossibleNeighbors(MineMap* m, Node &n, Node &dest, list<Node> &frontier, list<Node> &discovered);
 	Node getOptimalNode(list<Node> &nodes);
+	void removeNode(Node &n, list<Node> &frontier);
+	Node getNode(int x, int y, list<Node> &nodes);
 };
-
