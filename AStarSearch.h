@@ -53,7 +53,7 @@ class AStarSearch
 public:
 	int getManhattenDistance(Node a, Node b);
 	void getRoute(MineMap* m, Point &start, Point &dest, list<Point> &route);
-	void addPossibleNeighbors(MineMap* m, Node &n, Node &dest, list<Node> &frontier, list<Node> &discovered);
+	bool addPossibleNeighbors(MineMap* m, Node &n, Node &dest, list<Node> &frontier, list<Node> &discovered);
 	Node getOptimalNode(list<Node> &nodes);
 	void removeNode(Node &n, list<Node> &frontier);
 	Node getNode(int x, int y, list<Node> &nodes);

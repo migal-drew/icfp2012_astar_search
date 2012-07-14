@@ -12,8 +12,9 @@ int AStarSearch::getManhattenDistance(Node a, Node b)
 * Add into frontier surrounding undiscovered cells which are not walls or rocks
 * and are undiscovered
 */
-void AStarSearch::addPossibleNeighbors(MineMap* m, Node &n, Node &dest, list<Node> &frontier, list<Node> &discovered)
+bool AStarSearch::addPossibleNeighbors(MineMap* m, Node &n, Node &dest, list<Node> &frontier, list<Node> &discovered)
 {
+	bool isAdded = false;
 	list<Point>* neighbours = new list<Point>();
 	//Get points from MineMap
 	m->GetListOrthogonalPoints(*neighbours, Point(n.x, n.y), NULL, "*#", false);
@@ -36,8 +37,11 @@ void AStarSearch::addPossibleNeighbors(MineMap* m, Node &n, Node &dest, list<Nod
 			newNode.father_x = n.x;
 			newNode.father_y = n.y;
 			frontier.push_back(newNode);
+			isAdded = true;
 		}
 	}
+
+	return isAdded;
 }
 
 /*
@@ -108,17 +112,18 @@ void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &r
  	this->addPossibleNeighbors(m, s, d, *frontier, *discovered);
 	discovered->push_back(s);
 
+	bool frontierChanged = true;
 	bool success = false;
 	int prevSize = -1;
 
-	while (frontier->size() && prevSize != frontier->size())
+	while (frontier->size() && frontierChanged)
 	{
 		Node n = getOptimalNode(*frontier);
 		if (!isDestination(n, d))
 		{
 			prevSize = frontier->size();
 			//into frontier add possible neighbours
-			addPossibleNeighbors(m, n, d, *frontier, *discovered);
+			frontierChanged = addPossibleNeighbors(m, n, d, *frontier, *discovered);
 			this->removeNode(n, *frontier);
 			discovered->push_back(n);
 		}
