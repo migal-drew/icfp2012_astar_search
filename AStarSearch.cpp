@@ -108,47 +108,43 @@ void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &r
  	this->addPossibleNeighbors(m, s, d, *frontier, *discovered);
 	discovered->push_back(s);
 
-	while (frontier->size())
+	bool success = false;
+	int prevSize = -1;
+
+	while (frontier->size() && prevSize != frontier->size())
 	{
 		Node n = getOptimalNode(*frontier);
 		if (!isDestination(n, d))
 		{
+			prevSize = frontier->size();
 			//into frontier add possible neighbours
 			addPossibleNeighbors(m, n, d, *frontier, *discovered);
 			this->removeNode(n, *frontier);
 			discovered->push_back(n);
-			//this->removeNode(n, *frontier);
 		}
 		else
 		{
+			//We found our goal!
 			d.cost = n.cost;
 			d.heuristic = n.heuristic;
 			d.father_x = n.father_x;
 			d.father_y = n.father_y;
+			success = true;
+
 			break;
-			/*
-			if (final.cost == 0)
-			{
-				final = n;
-				discovered->push_back(n);
-			}
-			//If optimal node is destination again
-			else
-			{
-				if (final.cost == n.cost)
-					break;
-			}
-			*/
 		}
 
 	}
 
-	Node tmp = d;
-	//Reconstructing path
-	while(!isStart(tmp, s))
+	if (success)
 	{
-		route.push_front(Point(tmp.x, tmp.y));
-		tmp = this->getNode(tmp.father_x, tmp.father_y, *discovered);
+		Node tmp = d;
+		//Reconstructing path
+		while(!isStart(tmp, s))
+		{
+			route.push_front(Point(tmp.x, tmp.y));
+			tmp = this->getNode(tmp.father_x, tmp.father_y, *discovered);
+		}
 	}
 
 	delete frontier;
