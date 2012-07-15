@@ -1,11 +1,14 @@
 #include "AStarSearch.h"
+#include <iostream>
+
+using namespace std;
 
 /*
 * Heuristic
 */
 int AStarSearch::getManhattenDistance(Node a, Node b)
 {
-	return abs(a.x - b.x) + abs(a.y - b.y);
+	return (a.x - b.x)*(a.x - b.x) + (a.y - b.y)*(a.y - b.y);
 }
 
 /*
@@ -27,6 +30,7 @@ bool AStarSearch::addPossibleNeighbors(MineMap* m, Node &n, Node &dest,
 		bool inDiscovered = false;
 		bool inFrontier = false;
 		//Verify that point already discovered
+		
 		for (in = discovered.begin(); in != discovered.end(); in++)
 			if ((*ip).x == (*in).x && (*ip).y == (*in).y)
 			{
@@ -129,8 +133,14 @@ void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &r
 	bool success = false;
 	int prevSize = -1;
 
+	int i = 0;
 	while (frontier->size() && (frontierChanged))
 	{
+		/*
+		int fr = frontier->size();
+		int di = discovered->size();
+		cout << "Iteration# " << i++ << ": " << "fr " << fr << "di " << di << "all " << fr + di << endl;
+		*/
 		Node n = getOptimalNode(*frontier);
 		if (!isDestination(n, d))
 		{
