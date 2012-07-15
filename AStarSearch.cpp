@@ -1,7 +1,4 @@
 #include "AStarSearch.h"
-#include <iostream>
-
-using namespace std;
 
 /*
 * Heuristic
@@ -122,8 +119,6 @@ void AStarSearch::initLookupField(int width, int height)
 	{
 		lookupField[i] = new Node[width];
 	}
-
-	cout << "Init lookup!!!!!!!!!!" << endl;
 }
 
 void AStarSearch::eraseLookupField()
