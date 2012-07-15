@@ -34,14 +34,8 @@ bool AStarSearch::addPossibleNeighbors(MineMap* m, Node &n, Node &dest,
 			newNode.father_y = n.y;
 			newNode.isFrontier = true;
 			frontier.push_back(newNode);
-			isAdded = true;
 			lookupField[newNode.y][newNode.x] = newNode;
-			/*
-			lookupField[newNode.y][newNode.x].father_x = newNode.father_x;
-			lookupField[newNode.y][newNode.x].father_y = newNode.father_y;
-			lookupField[newNode.y][newNode.x].isDiscovered = false;
-			lookupField[newNode.y][newNode.x].isFrontier = true;
-			*/
+			isAdded = true;
 		}
 	}
 
