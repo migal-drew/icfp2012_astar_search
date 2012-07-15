@@ -6,8 +6,6 @@
 #include <list>
 #include <math.h>
 
-#define STEP_COST 1
-
 using namespace std;
 
 class Node
@@ -51,10 +49,20 @@ public:
 class AStarSearch
 {
 public:
+	static const int STEP_COST = 1;
+
+	void getRoute(MineMap* m, Point &start, Point &dest, list<Point> &route,
+		TCheckFunction checkFunc, char* forbidCells);
+
+private:
 	int getManhattenDistance(Node a, Node b);
-	void getRoute(MineMap* m, Point &start, Point &dest, list<Point> &route);
-	bool addPossibleNeighbors(MineMap* m, Node &n, Node &dest, list<Node> &frontier, list<Node> &discovered);
+
+	bool addPossibleNeighbors(MineMap* m, Node &n, Node &dest,
+		list<Node> &frontier, list<Node> &discovered, TCheckFunction checkFunc, char* forbidCells);
+
 	Node getOptimalNode(list<Node> &nodes);
+
 	void removeNode(Node &n, list<Node> &frontier);
+
 	Node getNode(int x, int y, list<Node> &nodes);
 };

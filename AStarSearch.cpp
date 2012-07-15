@@ -12,12 +12,13 @@ int AStarSearch::getManhattenDistance(Node a, Node b)
 * Add into frontier surrounding undiscovered cells which are not walls or rocks
 * and are undiscovered
 */
-bool AStarSearch::addPossibleNeighbors(MineMap* m, Node &n, Node &dest, list<Node> &frontier, list<Node> &discovered)
+bool AStarSearch::addPossibleNeighbors(MineMap* m, Node &n, Node &dest,
+	list<Node> &frontier, list<Node> &discovered, TCheckFunction checkFunc, char* forbidCells)
 {
 	bool isAdded = false;
 	list<Point>* neighbours = new list<Point>();
 	//Get points from MineMap
-	m->GetListOrthogonalPoints(*neighbours, Point(n.x, n.y), NULL, "*#", false);
+	m->GetListOrthogonalPoints(*neighbours, Point(n.x, n.y), checkFunc, forbidCells, false);
 
 	list<Point>::const_iterator ip;
 	list<Node>::const_iterator in;
@@ -107,7 +108,8 @@ Node AStarSearch::getNode(int x, int y, list<Node> &nodes)
 	return Node(-1, -1);
 }
 
-void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &route)
+void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &route,
+	TCheckFunction checkFunc, char* forbidCells)
 {
 	list<Node>* frontier = new list<Node>();
 	list<Node>* discovered = new list<Node>();
@@ -120,7 +122,7 @@ void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &r
 	s.heuristic = this->getManhattenDistance(s, d);
 	d.heuristic = 0;
 	//Add neighbors for start node
- 	this->addPossibleNeighbors(m, s, d, *frontier, *discovered);
+ 	this->addPossibleNeighbors(m, s, d, *frontier, *discovered, checkFunc, forbidCells);
 	discovered->push_back(s);
 
 	bool frontierChanged = true;
@@ -134,7 +136,7 @@ void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &r
 		{
 			prevSize = frontier->size();
 			//into frontier add possible neighbours
-			bool isAdded = addPossibleNeighbors(m, n, d, *frontier, *discovered);
+			bool isAdded = addPossibleNeighbors(m, n, d, *frontier, *discovered, checkFunc, forbidCells);
 			this->removeNode(n, *frontier);
 			discovered->push_back(n);
 			bool isSizeChanged = prevSize != frontier->size();
