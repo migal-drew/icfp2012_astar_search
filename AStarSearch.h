@@ -4,9 +4,6 @@
 #include "Point.h"
 #include "MineMap.h"
 #include <list>
-#include <math.h>
-
-using namespace std;
 
 class Node
 {
@@ -19,12 +16,18 @@ public:
 	int father_x;
 	int father_y;
 
+	bool isDiscovered;
+	bool isFrontier;
+
 	Node()
 	{
 		this->x = 0;
 		this->y = 0;
 		this->cost = 0;
 		this->heuristic = 0;
+
+		isDiscovered = false;
+		isFrontier = false;
 	}
 
 	Node(int x, int y)
@@ -33,6 +36,10 @@ public:
 		this->y = y;
 		this->cost = 0;
 		this->heuristic = 0;
+		this->father_x = -1;
+		this->father_y = -1;
+		isDiscovered = false;
+		isFrontier = false;
 	}
 
 	Node(const Node& n)
@@ -43,11 +50,24 @@ public:
 		this->heuristic = n.heuristic;
 		this->father_x = n.father_x;
 		this->father_y = n.father_y;
+		isDiscovered = n.isDiscovered;
+		isFrontier = n.isFrontier;
 	}
 };
 
 class AStarSearch
 {
+public:
+	AStarSearch()
+	{
+		lookupField = NULL;
+	}
+
+	~AStarSearch()
+	{
+		this->deleteLookupField();
+	}
+
 public:
 	static const int STEP_COST = 1;
 
@@ -55,14 +75,24 @@ public:
 		TCheckFunction checkFunc, char* forbidCells);
 
 private:
+	int width;
+	int height;
+	Node** lookupField;
+
+	void removeNodeFromFrontier(Node &n, list<Node> &nodes);
+
+	void initLookupField(int width, int height);
+
+	void eraseLookupField();
+
+	void deleteLookupField();
+
 	int getManhattenDistance(Node a, Node b);
 
 	bool addPossibleNeighbors(MineMap* m, Node &n, Node &dest,
-		list<Node> &frontier, list<Node> &discovered, TCheckFunction checkFunc, char* forbidCells);
+		list<Node> &frontier, TCheckFunction checkFunc, char* forbidCells);
 
 	Node getOptimalNode(list<Node> &nodes);
-
-	void removeNode(Node &n, list<Node> &frontier);
 
 	Node getNode(int x, int y, list<Node> &nodes);
 };

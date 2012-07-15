@@ -16,7 +16,7 @@ int AStarSearch::getManhattenDistance(Node a, Node b)
 * and are undiscovered
 */
 bool AStarSearch::addPossibleNeighbors(MineMap* m, Node &n, Node &dest,
-	list<Node> &frontier, list<Node> &discovered, TCheckFunction checkFunc, char* forbidCells)
+	list<Node> &frontier, TCheckFunction checkFunc, char* forbidCells)
 {
 	bool isAdded = false;
 	list<Point>* neighbours = new list<Point>();
@@ -27,25 +27,8 @@ bool AStarSearch::addPossibleNeighbors(MineMap* m, Node &n, Node &dest,
 	list<Node>::const_iterator in;
 	for (ip = neighbours->begin(); ip != neighbours->end(); ip++)
 	{
-		bool inDiscovered = false;
-		bool inFrontier = false;
-		//Verify that point already discovered
-		
-		for (in = discovered.begin(); in != discovered.end(); in++)
-			if ((*ip).x == (*in).x && (*ip).y == (*in).y)
-			{
-				inDiscovered = true;
-				break;
-			}
-
-		for (in = frontier.begin(); in != frontier.end(); in++)
-			if ((*ip).x == (*in).x && (*ip).y == (*in).y)
-			{
-				inFrontier = true;
-				break;
-			}
-
-		if (!inFrontier && !inDiscovered) 
+		Node tmp = lookupField[(*ip).y][(*ip).x];
+		if (!tmp.isDiscovered && !tmp.isFrontier)
 		{
 			Node newNode((*ip).x, (*ip).y);
 			newNode.cost = n.cost + STEP_COST;
@@ -54,8 +37,11 @@ bool AStarSearch::addPossibleNeighbors(MineMap* m, Node &n, Node &dest,
 			newNode.father_y = n.y;
 			frontier.push_back(newNode);
 			isAdded = true;
+			lookupField[newNode.y][newNode.x] = newNode;
 		}
 	}
+
+	delete neighbours;
 
 	return isAdded;
 }
@@ -91,13 +77,16 @@ bool isStart(Node &p, Node &start)
 	return p.x == start.x && p.y == start.y;
 }
 
-void AStarSearch::removeNode(Node &n, list<Node> &nodes)
+void AStarSearch::removeNodeFromFrontier(Node &n, list<Node> &nodes)
 {
 	list<Node>::iterator i;
 	for (i = nodes.begin(); i != nodes.end(); i++)
 		if ((*i).x == n.x && (*i).y == n.y)
 		{
+			lookupField[(*i).y][(*i).x].isDiscovered = true;
+			lookupField[(*i).y][(*i).x].isFrontier = false;
 			nodes.erase(i);
+			
 			return;
 		}
 }
@@ -112,11 +101,52 @@ Node AStarSearch::getNode(int x, int y, list<Node> &nodes)
 	return Node(-1, -1);
 }
 
+void AStarSearch::deleteLookupField()
+{
+	for (int i = 0; i < height; i++)
+		delete[] lookupField[i];
+
+	delete[] lookupField;
+
+	width = 0;
+	height = 0;
+}
+
+void AStarSearch::initLookupField(int width, int height)
+{
+	this->width = width;
+	this->height = height;
+
+	lookupField = new Node*[height];
+	for (int i = 0; i < height; i++)
+	{
+		lookupField[i] = new Node[width];
+	}
+
+	cout << "Init lookup!!!!!!!!!!" << endl;
+}
+
+void AStarSearch::eraseLookupField()
+{
+	for (int i = 0; i < height; i++)
+		for (int j = 0; j < width; j++)
+		{
+			lookupField[i][j].isDiscovered = false;
+			lookupField[i][j].isFrontier = false;
+			lookupField[i][j].father_x = -1;
+			lookupField[i][j].father_y = -1;
+		}
+}
+
 void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &route,
 	TCheckFunction checkFunc, char* forbidCells)
 {
 	list<Node>* frontier = new list<Node>();
-	list<Node>* discovered = new list<Node>();
+	
+	if (lookupField == NULL)
+		this->initLookupField(m->GetWidth(), m->GetHeight());
+	else
+		this->eraseLookupField();
 
 	//Destination
 	Node d = Node(dest.x, dest.y);
@@ -126,8 +156,9 @@ void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &r
 	s.heuristic = this->getManhattenDistance(s, d);
 	d.heuristic = 0;
 	//Add neighbors for start node
- 	this->addPossibleNeighbors(m, s, d, *frontier, *discovered, checkFunc, forbidCells);
-	discovered->push_back(s);
+ 	this->addPossibleNeighbors(m, s, d, *frontier, checkFunc, forbidCells);
+	lookupField[s.y][s.x] = s;
+	lookupField[s.y][s.x].isDiscovered = true;
 
 	bool frontierChanged = true;
 	bool success = false;
@@ -136,19 +167,13 @@ void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &r
 	int i = 0;
 	while (frontier->size() && (frontierChanged))
 	{
-		/*
-		int fr = frontier->size();
-		int di = discovered->size();
-		cout << "Iteration# " << i++ << ": " << "fr " << fr << "di " << di << "all " << fr + di << endl;
-		*/
 		Node n = getOptimalNode(*frontier);
 		if (!isDestination(n, d))
 		{
 			prevSize = frontier->size();
 			//into frontier add possible neighbours
-			bool isAdded = addPossibleNeighbors(m, n, d, *frontier, *discovered, checkFunc, forbidCells);
-			this->removeNode(n, *frontier);
-			discovered->push_back(n);
+			bool isAdded = addPossibleNeighbors(m, n, d, *frontier, checkFunc, forbidCells);
+			this->removeNodeFromFrontier(n, *frontier);
 			bool isSizeChanged = prevSize != frontier->size();
 			frontierChanged = isAdded || isSizeChanged;
 		}
@@ -163,7 +188,6 @@ void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &r
 
 			break;
 		}
-
 	}
 
 	if (success)
@@ -173,10 +197,10 @@ void AStarSearch::getRoute(MineMap* m, Point &start, Point &dest, list<Point> &r
 		while(!isStart(tmp, s))
 		{
 			route.push_front(Point(tmp.x, tmp.y));
-			tmp = this->getNode(tmp.father_x, tmp.father_y, *discovered);
+			tmp = lookupField[tmp.father_y][tmp.father_x];
 		}
 	}
 
+	frontier->clear();
 	delete frontier;
-	delete discovered;
 }
